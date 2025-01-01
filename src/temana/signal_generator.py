@@ -1,7 +1,3 @@
-"""
-Signal generator is the library of functions for temporal data analysis and generation of artificial signals.
-"""
-
 import numpy as np
 import random
 from numpy.typing import ArrayLike
@@ -11,50 +7,6 @@ from interpolators import mspline_t, msplin_zero
 def random_signal_function() -> callable:
     """Returns at random a sine or cosine function."""
     return np.sin if np.random.choice([0, 1], 1) == 0 else np.cos
-        
-def generate_signal(start: float, end: float, num_points: ArrayLike):
-    """Generate random signals of arbitrary resolution of variable frecuency.
-    
-    Parameters
-    ----------
-    start : int
-        The start of the domian interval, inclusive.
-    end : int
-        Then end of the domain interval, inclusive.
-    num_points : list
-        The number of points for each generated signal. Must be non-empty.
-    add_noise : bool
-        Whether to add noise to the signal or not.
-        
-    Returns
-    -------
-    domains : list
-        X coordinates of each signal.
-    signals: list
-        Y coordinates of the each signal.
-    """
-    
-    A = (2*np.random.rand() - 1)*np.random.randint(1, 6, 1) #Amplitude
-    B = (2*np.random.rand() - 1)*np.random.randint(1, 10, 1) #Frecuency
-    C = (2*np.random.rand() - 1)*np.random.randint(1, 10, 1) #Translation
-    signal_function = random_signal_function()
-
-    noise_amp = (2*np.random.rand() - 1)*np.random.uniform(0.1, 0.5, 1) #Noise amplitude
-    noise_freq = (2*np.random.rand() - 1)*np.random.randint(100, 200, 1) #Noise frecuency
-    noise_function = random_signal_function()
-
-    domains = []
-    signals = []
-    
-    for n in num_points:
-        x = np.linspace(start, end, n)
-        y = A*signal_function(B*x) + C
-        y += noise_amp*noise_function(noise_freq*x);
-        
-        domains.append(x)
-        signals.append(y)
-        
-    return domains, signals
 
 def amplitude_change_points(start: float, end: float) -> list:
     """Generate a list between 1 and 4 reference points in the interval [start, end] where the amplitud changes."""
@@ -79,54 +31,6 @@ def amplitude_change_points(start: float, end: float) -> list:
         points.append((x, y))
     
     return points
-
-def generate_signal_va(start: float, end: float, num_points: ArrayLike):
-    """Generate random signals of arbitrary resolution of variable frecuency.
-    
-    Parameters
-    ----------
-    start : int
-        The start of the domian interval, inclusive.
-    end : int
-        Then end of the domain interval, inclusive.
-    num_points : array_like
-        The number of points for each generated signal. Must be non-empty.
-        
-    Returns
-    -------
-    domains : list
-        X coordinates of each signal.
-    signals: list
-        Y coordinates of the each signal.
-    """
-    
-    A = (2*np.random.rand() - 1)*np.random.randint(1, 6, 1) #Amplitude
-    B = (2*np.random.rand() - 1)*np.random.randint(1, 25, 1) #Frecuency
-    C = (2*np.random.rand() - 1)*np.random.randint(1, 10, 1) #Translation
-    D = (np.random.rand())*np.pi #Phase
-    
-    domains = []
-    signals = []
-    
-    points = amplitude_change_points(start, end)
-    xs, ys = zip(*points)
-    tau = np.random.choice([1, 3, 5, 8, 10, 12, 15, 20])
-    
-    signal_function = random_signal_function()
-    
-    for n in num_points:
-        x = np.linspace(start, end, n)
-        y = A*signal_function(B*(x - D))
-    
-        if np.random.randint(0, 2, 1) == 0: #Splines of random tension
-            y = mspline_t(xs, ys, tau)(x)*y + C
-        else: #Splines of infite tension
-            y = msplin_zero(xs, ys)(x)*y + C
-
-        domains.append(x)
-        signals.append(y)
-        
-    return domains, signals 
 
 def freq_change_points(start: float, end: float):
     """Create a list of points in the domain [start, end] to change the frecuency of the signal.
