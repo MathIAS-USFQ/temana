@@ -1,6 +1,10 @@
+# External libraries
 import numpy as np
 import random
+import matplotlib.pyplot as plt
+import os
 
+# Custom libraries
 from interpolators import mspline_t, msplin_zero
 
 class SignalGenerator:
@@ -183,3 +187,134 @@ class SignalGenerator:
             y = msplin_zero(xs, ys)(x)*y + C + noise
 
         return y
+    
+    def generate_signals(self, num_signals: int = 1):
+        """Generates a number of signals and stores them internally.
+        
+        Parameters
+        ----------
+        num_signals : int
+            The number of signals to generate.
+            
+        Raises
+        ------
+        TypeError
+            If `num_signals` is not an integer.
+        ValueError
+            If `num_signals` is less than 1.
+        """
+        
+        try:
+            if num_signals < 1:
+                raise ValueError("The number of signals must be greater than 0.")
+            
+            for _ in range(num_signals):
+                self._signals.append(self.generate_signal())
+        except TypeError:
+            raise TypeError("The number of signals must be an integer.")
+            
+    def get_signals(self):
+        """Returns the list of generated signals.
+        
+        Returns
+        -------
+        signals : list
+            List of signals.
+        """
+        
+        return self._signals
+    
+    def plot_signal(self, signal_index: int = None, save_path: str = None):
+        """Plots a signal from the list of generated signals.
+        
+        Parameters
+        ----------
+        signal_index : int
+            The index of the signal to plot. If `None`, a random signal is chosen.
+        save_path : str
+            The path to save the plot to. If `None`, the plot is displayed.
+            
+        Raises
+        ------
+        ValueError
+            If no signals have been generated yet.
+        """
+
+        if not self._signals:
+            raise ValueError("No signals generated yet.")
+
+        index = signal_index if signal_index is not None else random.randint(0, len(self._signals) - 1)
+        signal = self._signals[index]
+
+        plt.figure(figsize=(10, 5))
+        plt.plot(self._domain, signal)
+        # plt.title(f"Signal {index}")
+        # plt.xlabel("Time")
+        # plt.ylabel("Amplitude")
+
+        if save_path:
+            plt.savefig(save_path)
+            print(f"Signal {index} plot saved to {save_path}")
+        else:
+            plt.show()
+
+        plt.close()
+        
+    def _save_signal_image(self, signal_index: int, images_dir: str):
+        """Helper method to save a signal plot as an image.
+        
+        Parameters
+        ----------
+        signal_index : int
+            The index of the signal to plot.
+        images_dir : str
+            The directory in which to save the image.
+        """
+        image_path = os.path.join(images_dir, f"signal_{signal_index}.png")
+        self.plot_signal(signal_index=signal_index, save_path=image_path)
+        
+    def save_signals(self, filename: str, directory: str = ".", save_images: bool = False):
+        """Saves the generated signals to a file in the specified directory.
+        
+        Parameters
+        ----------
+        filename : str
+            The name of the file to save the signals to.
+        directory : str
+            The directory in which to save the file. Defaults to the current directory.
+        save_images : bool
+            Whether to save images of the signals as well. Defaults to `False
+            
+        Raises
+        ------
+        ValueError
+            If no signals have been generated yet.
+        """
+        
+        if not self._signals:
+            raise ValueError("No signals generated yet.")
+        
+        # Ensure the directory exists
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        # Create images directory if needed
+        images_dir = None
+        if save_images:
+            images_dir = os.path.join(directory, "signal_imgs")
+            if not os.path.exists(images_dir):
+                os.makedirs(images_dir)
+
+        # Save the signals to a text file
+        filepath = os.path.join(directory, filename)
+        with open(filepath, "w") as f:
+            for i, signal in enumerate(self._signals):
+                f.write(" ".join(map(str, signal)))
+                if i != (len(self._signals) - 1):
+                    f.write("\n")
+
+                # Save the signal image if requested
+                if save_images and images_dir:
+                    self._save_signal_image(signal_index=i, images_dir=images_dir)
+
+        print(f"Signals saved to {filepath}")
