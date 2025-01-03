@@ -23,21 +23,21 @@ class SignalGenerator:
         self.end = end
         self.num_points = num_points
         
-        self.setup()
+        self._setup()
 
-    def setup(self):
+    def _setup(self):
         """Initializes the domain and the list of signals."""
         
-        self.domain = np.linspace(self.start, self.end, self.num_points)
-        self.signals = []
+        self._domain = np.linspace(self.start, self.end, self.num_points)
+        self._signals = []
 
-    def random_signal_function(self) -> callable:
+    def _random_signal_function(self) -> callable:
         """Returns a sine or cosine function at random."""
         
         return np.sin if np.random.choice([0, 1], 1) == 0 else np.cos
 
-    def amplitude_change_points(self) -> list:
-        """Create a list of points in the domain [self.start, self.end] to change the amplitude of the signal.
+    def _amplitude_change_points(self) -> list:
+        """Create a list of points in the domain [`self.start`, `self.end`] to change the amplitude of the signal.
         
         Returns
         -------
@@ -66,8 +66,8 @@ class SignalGenerator:
         
         return points
 
-    def freq_change_points(self):
-        """Create a list of points in the domain [self.start, self.end] to change the frecuency of the signal.
+    def _freq_change_points(self):
+        """Create a list of points in the domain [`self.start`, `self.end`] to change the frecuency of the signal.
             
         Returns
         -------
@@ -152,11 +152,11 @@ class SignalGenerator:
         
         Returns
         -------
-        y: list
+        y: np.ndarray
             Y coordinates of the signal at each point defined in self.domain.
         """
         
-        freq_points, freq_points_h = self.freq_change_points()
+        freq_points, freq_points_h = self._freq_change_points()
         xf, yf = zip(*freq_points)
         tau = np.random.choice(np.linspace(1, 2, 11))
 
@@ -165,15 +165,15 @@ class SignalGenerator:
         C = (2*np.random.rand()-1)*np.random.randint(1, 10, 1) #Translation
         D = (np.random.rand())*np.pi #Phase
         
-        amp_points = self.amplitude_change_points()
+        amp_points = self._amplitude_change_points()
         xs, ys = zip(*amp_points)
         xs_h, ys_h = zip(*freq_points_h)
         
         tau = np.random.choice(np.linspace(1, 2, 21))
         noise_amplitude = np.random.uniform(0.08, 0.2, 1)
-        signal_funtion = self.random_signal_function()
+        signal_funtion = self._random_signal_function()
         
-        x = self.domain
+        x = self._domain
         y = A*signal_funtion(B(x)*(x - D))
         noise = noise_amplitude*mspline_t(xs, ys, tau)(x) * np.sin(msplin_zero(xs_h, ys_h)(x)*x)
         
