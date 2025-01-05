@@ -4,8 +4,15 @@ import random
 import matplotlib.pyplot as plt
 import os
 
+try:
+    from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn
+    from rich import print
+    rich_available = True
+except ImportError:
+    rich_available = False
+
 # Custom libraries
-from interpolators import mspline_t, msplin_zero
+from .interpolators import mspline_t, msplin_zero
 
 class SignalGenerator:
     """Generator of random signals of arbitrary resolution of variable amplitude and frecuency."""
@@ -254,7 +261,6 @@ class SignalGenerator:
 
         if save_path:
             plt.savefig(save_path)
-            print(f"Signal {index} plot saved to {save_path}")
         else:
             plt.show()
 
@@ -283,7 +289,7 @@ class SignalGenerator:
         directory : str
             The directory in which to save the file. Defaults to the current directory.
         save_images : bool
-            Whether to save images of the signals as well. Defaults to `False
+            Whether to save images of the signals as well. Defaults to `False`.
             
         Raises
         ------
@@ -297,16 +303,52 @@ class SignalGenerator:
         # Ensure the directory exists
         if not os.path.exists(directory):
             os.makedirs(directory)
+            
+        msg = f"Signals saved to {self._add_rich_markup(filename, 'bold green')}"
 
         # Create images directory if needed
         images_dir = None
         if save_images:
-            images_dir = os.path.join(directory, "signal_imgs")
+            images_dir = os.path.join(directory, "imgs")
             if not os.path.exists(images_dir):
                 os.makedirs(images_dir)
+                
+            msg += f" and images saved to {self._add_rich_markup(images_dir, 'bold blue')}"
 
         # Save the signals to a text file
         filepath = os.path.join(directory, filename)
+        
+        if rich_available:
+            with Progress(
+                SpinnerColumn(),
+                "[progress.description]{task.description}",
+                BarColumn(),
+                TextColumn("{task.completed}/{task.total} signals"),
+            ) as progress:
+                save_task = progress.add_task("Saving signals", total=len(self._signals))
+                self._save_signals_to_file(filepath, images_dir, save_task, progress.update)
+
+            print(msg)
+        else:
+            print("Saving signals...")
+            self._save_signals_to_file(filepath, images_dir)
+            print(msg)
+
+    def _save_signals_to_file(self, filepath: str, images_dir: str, task=None, progress_callback=None):
+        """Handles the core logic for saving signals to a file, with optional progress tracking.
+
+        Parameters
+        ----------
+        filepath : str
+            The full path to the file where the signals should be saved.
+        images_dir : str
+            The directory to save signal images, if requested.
+        task : object, optional
+            The rich task object for progress tracking. Defaults to None.
+        progress_callback : callable, optional
+            The callback function to update the progress bar. Defaults to None.
+        """
+        
         with open(filepath, "w") as f:
             for i, signal in enumerate(self._signals):
                 f.write(" ".join(map(str, signal)))
@@ -314,7 +356,30 @@ class SignalGenerator:
                     f.write("\n")
 
                 # Save the signal image if requested
-                if save_images and images_dir:
+                if images_dir:
                     self._save_signal_image(signal_index=i, images_dir=images_dir)
 
-        print(f"Signals saved to {filepath}")
+                # Update progress if a progress callback is provided
+                if progress_callback:
+                    progress_callback(task, advance=1)
+                else:
+                    print(f"Saved signal {i + 1}/{len(self._signals)}", end="\r")
+                    
+    def _add_rich_markup(self, text: str, markup: str = "bold") -> str:
+        """Adds rich markup to the provided text if the rich library is available.
+        
+        Parameters
+        ----------
+        text : str
+            The text to add markup to.
+        markup : str, optional
+            The type of markup to add. Defaults to "bold".
+        Returns
+        -------
+        str
+            The text with added markup, or the original text if the rich library is not available.
+        """
+        
+        if rich_available:
+            return f"[{markup}]{text}[/{markup}]"
+        return text
