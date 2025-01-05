@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "temana"
+version = "0.1.0"
+description = "A package to generate random signals of variable amplitude and frequency, with options to save signals and images."
+readme = "README.md"
+authors = [
+    { name = "José Ocampo", email = "joseocampo220@gmail.com" },
+    { name = "Julio Ibarra", email = "jibarra@usfq.edu.ec" },
+]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+keywords = ["signal generation", "random signals", "data visualization", "scientific computing", "waveform generation"]
+dependencies = ["numpy", "matplotlib", "scipy"]
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = ["pytest", "bumpver", "black", "flake8"]
+ui = ["rich"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["temana*"]
+
+[project.scripts]
+temana = "temana.__main__:main"
+
+[tool.bumpver]
+current_version = "0.1.0"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "bump version {old_version} -> {new_version}"
+tag_message = "{new_version}"
+tag_scope = "default"
+pre_commit_hook = ""
+post_commit_hook = ""
+commit = true
+tag = true
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = ['current_version = "{version}"', 'version = "{version}"']
+"src/temana/__init__.py" = ["{version}"]
+"README.md" = [
+    "{version}",
+    "{pep440_version}",
+]
