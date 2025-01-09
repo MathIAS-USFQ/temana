@@ -15,10 +15,10 @@ def parse_args():
         help="Name of the file to save the signals into",
     )
     parser.add_argument(
-        "--start", "-s", type=int, default=0, help="Start value of the signal domain"
+        "--start", "-s", type=float, default=0, help="Start value of the signal domain"
     )
     parser.add_argument(
-        "--end", "-e", type=int, default=1, help="End value of the signal domain"
+        "--end", "-e", type=float, default=1, help="End value of the signal domain"
     )
     parser.add_argument(
         "--signals", "-n", type=int, default=1, help="Number of signals to be generated"
