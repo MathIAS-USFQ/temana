@@ -32,7 +32,6 @@ requires-python = ">=3.8"
 
 [project.optional-dependencies]
 dev = ["pytest", "bumpver", "black", "flake8"]
-ui = ["rich"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

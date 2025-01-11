@@ -12,12 +12,6 @@ You can install `temana` using:
 pip install temana
 ```
 
-For enhanced terminal output, including progress bars and colored messages, include the UI optional dependencies at installation.
-
-```bash
-pip install temana[ui]
-```
-
 ---
 
 ## Usage
