@@ -2,6 +2,8 @@
 
 `temana` is a Python package for generating random signals of variable amplitude and frequency. The package allows you to generate signals with as many points as needed in a specified domain and provides functionality to save the signals to a file or as images.
 
+![Example signal](assets/example.png)
+
 ---
 
 ## Installation
@@ -23,17 +25,20 @@ To use the `temana` package, you can run it as a script or import it into your P
 You can generate and save signals from the command line using the package's main entry point:
 
 ```bash
-temana --file signals.txt
+temana -f signals.txt
 ```
 
+The signals file then can be found in `./output/signals.txt`.
+
 **Arguments:**
-- `--file, -f`: Name of the file to save the generated signals.
+- `--file, -f`: Name of the file to save the generated signals. At the moment the package only supports `.txt` files. 
 - `--start, -s`: Start value of the signal domain. Defaults to 0.
-- `--end, -e`: End value of the signal domain. Defaults to 1.
+- `--end, -e`: End value of the signal domain. Defaults to 4$\pi$.
 - `--signals, -n`: Number of signals to generate. Defaults to 1.
-- `--n_points, -p`: Number of points in each signal. Defaults to 100.
+- `--n_points, -p`: Number of points in each signal. Defaults to 1000.
 - `--directory, -d`: Directory to save the files. Defaults to `./output`.
-- `--imgs, -i`: Save signal plots as images.
+- `--imgs, -i`: Save signal plots as images if used.
+- `--sample_points`: Number of points to sample from the original signal. Must be stictly less than `--points`. The sample signals will always be saved to `sample_{filename}`, where `filename` is the name specified in the `-f` parameter. If not specified, only the full signals will be generated.
 
 ### **Using the Package in Python**
 

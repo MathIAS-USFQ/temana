@@ -6,7 +6,12 @@ def main():
     args = parse_args()
 
     # Initialize the signal generator
-    generator = SignalGenerator(start=args.start, end=args.end, num_points=args.points)
+    generator = SignalGenerator(
+        start=args.start,
+        end=args.end,
+        num_points=args.points,
+        sample_points=args.sample_points,
+    )
 
     # Generate signals
     generator.generate_signals(num_signals=args.signals)

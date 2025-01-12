@@ -10,7 +10,7 @@ from .interpolators import mspline_t, msplin_zero
 class SignalGenerator:
     """Generator of random signals of arbitrary resolution of variable amplitude and frecuency."""
     
-    def __init__(self, start: float, end: float, num_points: int):
+    def __init__(self, start: float, end: float, num_points: int, sample_points: int = None):
         """Defines the interval for the X coordinates and the number of points for each generated signal.
         
         Parameters
@@ -21,11 +21,20 @@ class SignalGenerator:
             End point of the interval.
         num_points : int
             The number of points within the interval that will be generated for each signal.
+        sample_points : int, optional
+            The number of sampled points for a reduced domain. Must be less than `num_points`.
         """
         
         self.start = start
         self.end = end
         self.num_points = num_points
+        
+        self.add_sample = sample_points is not None
+        if self.add_sample:
+            if sample_points >= num_points:
+                raise ValueError("sample_points must be strictly less than num_points.")
+            
+            self.sample_points = sample_points
         
         self._setup()
 
@@ -34,11 +43,10 @@ class SignalGenerator:
         
         self._domain = np.linspace(self.start, self.end, self.num_points)
         self._signals = []
-
-    def _random_signal_function(self) -> callable:
-        """Returns a sine or cosine function at random."""
         
-        return np.sin if np.random.choice([0, 1], 1) == 0 else np.cos
+        if self.add_sample:
+            self._sample_domain = np.linspace(self.start, self.end, self.sample_points)
+            self._sampled_signals = []
 
     def _amplitude_change_points(self) -> list:
         """Create a list of points in the domain [`self.start`, `self.end`] to change the amplitude of the signal.
@@ -150,6 +158,18 @@ class SignalGenerator:
         points_h = [(high_f_domain[i], high_frecuencies[i]) for i in range(len(high_f_domain))]
         
         return points, points_h
+    
+    def _random_signal_function(self) -> callable:
+        """Returns a sine or cosine function at random."""
+        
+        return np.sin if np.random.choice([0, 1], 1) == 0 else np.cos
+    
+    def _random_interpolator(self, xs, ys, tau) -> callable:
+        """Returns a random interpolator function."""
+        
+        if np.random.choice([0,1], 1, p=[0.98, 0.02]) == 0:
+             mspline_t(xs, ys, tau)
+        return msplin_zero(xs, ys)
 
     def generate_signal(self):
         """Generate a random signal of arbitrary resolution of variable amplitude and frecuency.
@@ -157,7 +177,9 @@ class SignalGenerator:
         Returns
         -------
         y: np.ndarray
-            Y coordinates of the signal at each point defined in self.domain.
+            Y coordinates of the signal at each point defined in `self.domain`.
+        y_sampled: np.ndarray
+            Y coordinates of the signal at each point defined in `self.sample_domain`. If `self.add_sample` is `False`, returns `None`.
         """
         
         freq_points, freq_points_h = self._freq_change_points()
@@ -175,18 +197,22 @@ class SignalGenerator:
         
         tau = np.random.choice(np.linspace(1, 2, 21))
         noise_amplitude = np.random.uniform(0.08, 0.2, 1)
-        signal_funtion = self._random_signal_function()
+        signal_function = self._random_signal_function()
+        interpolator = self._random_interpolator(xs, ys, tau)
         
-        x = self._domain
-        y = A*signal_funtion(B(x)*(x - D))
-        noise = noise_amplitude*mspline_t(xs, ys, tau)(x) * np.sin(msplin_zero(xs_h, ys_h)(x)*x)
+        def generate_points(x):
+            y = A*signal_function(B(x)*(x - D))
+            noise = noise_amplitude*mspline_t(xs, ys, tau)(x) * np.sin(msplin_zero(xs_h, ys_h)(x)*x)
+            y = interpolator(x)*y + C + noise
+            return y
         
-        if np.random.choice([0,1], 1, p=[0.98, 0.02]) == 0: #Splines of random tension
-            y = mspline_t(xs, ys, tau)(x)*y + C + noise
-        else: #Splines of infite tension
-            y = msplin_zero(xs, ys)(x)*y + C + noise
-
-        return y
+        y = generate_points(self._domain)
+        y_sampled = None
+        
+        if self.add_sample:
+            y_sampled = generate_points(self._sample_domain)
+        
+        return y, y_sampled
     
     def generate_signals(self, num_signals: int = 1):
         """Generates a number of signals and stores them internally.
@@ -209,20 +235,25 @@ class SignalGenerator:
                 raise ValueError("The number of signals must be greater than 0.")
             
             for _ in range(num_signals):
-                self._signals.append(self.generate_signal())
+                signal, sampled_signal = self.generate_signal()
+                self._signals.append(signal)
+                if self.add_sample:
+                    self._sampled_signals.append(sampled_signal)
         except TypeError:
             raise TypeError("The number of signals must be an integer.")
             
-    def get_signals(self):
-        """Returns the list of generated signals.
-        
-        Returns
-        -------
-        signals : list
-            List of signals.
-        """
+    def get_signals(self) -> list:
+        """Returns the list of generated signals."""
         
         return self._signals
+    
+    def get_sampled_signals(self) -> list:
+        """Returns the list of sampled signals."""
+        
+        try:
+            return self._sampled_signals
+        except AttributeError:
+            raise ValueError("No sampled signals have been generated")
     
     def plot_signal(self, signal_index: int = None, save_path: str = None):
         """Plots a signal from the list of generated signals.
@@ -246,11 +277,14 @@ class SignalGenerator:
         index = signal_index if signal_index is not None else random.randint(0, len(self._signals) - 1)
         signal = self._signals[index]
 
-        plt.figure(figsize=(10, 5))
-        plt.plot(self._domain, signal)
-        # plt.title(f"Signal {index}")
-        # plt.xlabel("Time")
-        # plt.ylabel("Amplitude")
+        plt.figure(figsize=(14, 7))
+        # plt.style.use('ggplot')
+        plt.plot(self._domain, signal, label="Signal")
+        
+        if self.add_sample:
+            sampled_signal = self._sampled_signals[index]
+            plt.scatter(self._sample_domain, sampled_signal, label="Sample Points", marker=".", color="crimson")
+            plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=2, fancybox=True, shadow=True)
 
         if save_path:
             plt.savefig(save_path)
@@ -259,20 +293,7 @@ class SignalGenerator:
 
         plt.close()
         
-    def _save_signal_image(self, signal_index: int, images_dir: str):
-        """Helper method to save a signal plot as an image.
-        
-        Parameters
-        ----------
-        signal_index : int
-            The index of the signal to plot.
-        images_dir : str
-            The directory in which to save the image.
-        """
-        image_path = os.path.join(images_dir, f"signal_{signal_index}.png")
-        self.plot_signal(signal_index=signal_index, save_path=image_path)
-        
-    def save_signals(self, filename: str, directory: str = ".", save_images: bool = False):
+    def save_signals(self, filename: str, directory: str = "output", save_images: bool = False):
         """Saves the generated signals to a file in the specified directory.
         
         Parameters
@@ -280,9 +301,9 @@ class SignalGenerator:
         filename : str
             The name of the file to save the signals to.
         directory : str
-            The directory in which to save the file. Defaults to the current directory.
+            The directory in which to save the file.
         save_images : bool
-            Whether to save images of the signals as well. Defaults to `False`.
+            Whether to save images of the signals as well.
             
         Raises
         ------
@@ -295,29 +316,59 @@ class SignalGenerator:
         
         if not os.path.exists(directory):
             os.makedirs(directory)
-        
-        filepath = os.path.join(directory, filename)
-        msg = f"Signals saved to {filename}"
 
-        images_dir = None
+        self._save_signals_to_file(filename, directory)
+        
+        if self.add_sample:
+            self._save_signals_to_file(f"sample_{filename}", directory, is_sampled=True)
+            
         if save_images:
             images_dir = os.path.join(directory, "imgs")
-            if not os.path.exists(images_dir):
-                os.makedirs(images_dir)
-                
-            msg += f" and images saved to {images_dir}"
+            self._save_signals_images(images_dir)
 
-        print("Saving signals...")
+    def _save_signals_to_file(self, filename: str, directory: str, is_sampled: bool = False):
+        """Helper method to save the generated signals to a file.
+        
+        Parameters
+        ----------
+        filename : str
+            The name of the file to save the signals to.
+        directory : str
+            The directory in which to save the file.
+        is_sampled : bool
+            Whether the signals are sampled or not.
+        """
+        
+        filepath = os.path.join(directory, filename)
         with open(filepath, "w") as f:
             for i, signal in enumerate(self._signals):
                 f.write(" ".join(map(str, signal)))
                 if i != (len(self._signals) - 1):
                     f.write("\n")
-
-                # Save the signal image if requested
-                if images_dir:
-                    self._save_signal_image(signal_index=i, images_dir=images_dir)
-                    
-                print(f"Saved signal {i + 1}/{len(self._signals)}", end="\r")
+                print(f"Saved {"sampled " if is_sampled  else ""}signal {i + 1}/{len(self._signals)}", end="\r")
         
-        print(msg)
+        cursive_filepath = f'\x1B[3m{filepath}\x1B[0m'
+        if is_sampled:
+            print(f'Sampled signals saved to {cursive_filepath}.')
+        else:
+            print(f"Signals saved to {cursive_filepath}.")
+            
+    def _save_signals_images(self, images_dir: str):
+        """Helper method to save images of the generated signals.
+        
+        Parameters
+        ----------
+        images_dir : str
+            The directory in which to save the images.
+        """
+        
+        if not os.path.exists(images_dir):
+            os.makedirs(images_dir)
+        
+        for i in range(len(self._signals)):
+            image_path = os.path.join(images_dir, f"{i}.png")
+            self.plot_signal(signal_index=i, save_path=image_path)
+            print(f"Saved signal image {i + 1}/{len(self._signals)}", end="\r")
+        
+        cursive_images_dir = f'\x1B[3m{images_dir}\x1B[0m'
+        print(f"Images saved to {cursive_images_dir} directory.")

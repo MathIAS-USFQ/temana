@@ -1,5 +1,5 @@
 import argparse
-
+import numpy as np
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -18,13 +18,18 @@ def parse_args():
         "--start", "-s", type=float, default=0, help="Start value of the signal domain"
     )
     parser.add_argument(
-        "--end", "-e", type=float, default=1, help="End value of the signal domain"
+        "--end", "-e", type=float, default=4*np.pi, help="End value of the signal domain"
     )
     parser.add_argument(
         "--signals", "-n", type=int, default=1, help="Number of signals to be generated"
     )
     parser.add_argument(
-        "--points", "-p", type=int, default=100, help="Number of points of each signal"
+        "--points", "-p", type=int, default=1000, help="Number of points of each signal"
+    )
+    parser.add_argument(
+        "--sample_points",
+        type=int,
+        help="Number of points for the sample signal. Must be strictly less than the number of points of the signal",
     )
     parser.add_argument(
         "--directory",
