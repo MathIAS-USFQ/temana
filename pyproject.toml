@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "temana"
-version = "0.1.0"
+version = "0.2.0"
 description = "A package to generate random signals of variable amplitude and frequency, with options to save signals and images."
 readme = "README.md"
 authors = [
@@ -41,7 +41,7 @@ include = ["temana*"]
 temana = "temana.__main__:main"
 
 [tool.bumpver]
-current_version = "0.1.0"
+current_version = "0.2.0"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
 tag_message = "{new_version}"
