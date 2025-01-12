@@ -345,7 +345,7 @@ class SignalGenerator:
                 f.write(" ".join(map(str, signal)))
                 if i != (len(self._signals) - 1):
                     f.write("\n")
-                print(f"Saved {"sampled " if is_sampled  else ""}signal {i + 1}/{len(self._signals)}", end="\r")
+                print(f'Saved {"sampled " if is_sampled  else ""}signal {i + 1}/{len(self._signals)}', end="\r")
         
         cursive_filepath = f'\x1B[3m{filepath}\x1B[0m'
         if is_sampled:
