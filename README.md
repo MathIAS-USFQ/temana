@@ -2,7 +2,7 @@
 
 `temana` is a Python package for generating random signals of variable amplitude and frequency. The package allows you to generate signals with as many points as needed in a specified domain and provides functionality to save the signals to a file or as images.
 
-![Example signal](assets/example.png)
+![Example signal](https://github.com/MathIAS-USFQ/temana/blob/main/assets/example.png?raw=true)
 
 ---
 
